@@ -1,0 +1,80 @@
+---
+- name: install docker
+  hosts: ec2_instance
+  become: true
+  tasks:
+    - name: install docker
+      yum: 
+        name: docker
+        update_cache: yes
+        state: present
+
+- name: install docker compose
+  hosts: ec2_instance
+  become: true
+
+  tasks: 
+    - name: install docker compose
+      get_url:
+        url: https://github.com/docker/compose/releases/download/1.27.4/docker-compose-Linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: +x
+
+- name: start docker daemon
+  hosts: ec2_instance
+  become: true
+  tasks:
+     - name: start docker
+       systemd:
+          name: docker
+          state: started
+
+- name: Add ec2-user to docker group
+  hosts: ec2_instance
+  become: true
+  tasks: 
+    - name: Add ec2-user to docker group
+      user: 
+        name: ec2-user
+        groups: docker
+        append: yes
+    - name: Reconnect to server session
+      meta: reset_connection    #restart the session to activate adding user ti docker group
+
+- name: install docker-python module
+  hosts: ec2_instance
+  become: true
+  tasks:
+    - name: install python module 
+      pip:
+        name: docker
+
+- name: Install docker-compose module
+  hosts: ec2_instance
+  become: true
+  tasks:
+    - name: Install docker-compose module
+      pip:
+        name: docker-compose
+        state: present
+
+
+
+- name: start docker container
+  hosts: ec2_instance
+  become: true
+  tasks:
+    - name: copy docker compose file to server 
+      copy:
+        src: /Users/mac/Downloads/investment.web-staging 6/docker-compose.yaml
+        dest: /home/ec2-user/docker-compose.yaml
+    - name: Start container from compose
+      docker_compose: 
+        project_src: /home/ec2-user     
+    - name: start conatainer from docker compose
+      docker_compose:
+            project_src: /home/ec2-user
+            state: present
+
+
+
